@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Claude Code skill that automatically refreshes coding guidelines based on codebase evolution, PR reviews, and approved patterns",
   "author": "beamtempmacbookpro",
-  "repository": "https://github.com/beamtempmacbookpro/claude-skills",
+  "repository": "https://github.com/jjholmes927/claude-skills",
   "license": "MIT",
   "skills": [
     {

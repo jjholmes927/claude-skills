@@ -34,7 +34,7 @@ python3 skills/guideline-refresher/refresh_guidelines.py --area backend/api --de
 
 ```bash
 # Clone this repository
-git clone https://github.com/yourusername/claude-skills.git
+git clone https://github.com/jjholmes927/claude-skills.git
 
 # Copy skills to Claude skills directory
 cp -r claude-skills/skills/* ~/.claude/skills/

@@ -1,0 +1,13 @@
+{
+  "plugins": [
+    {
+      "name": "guideline-refresher",
+      "source": {
+        "source": "github",
+        "repo": "jjholmes927/claude-skills"
+      },
+      "description": "Auto-refresh coding guidelines based on codebase patterns",
+      "version": "1.0.0"
+    }
+  ]
+}

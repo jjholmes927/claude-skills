@@ -8,7 +8,7 @@ Quick reference for using the Claude Skills in this repository.
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/claude-skills.git
+git clone https://github.com/jjholmes927/claude-skills.git
 cd claude-skills
 
 # Install all skills
