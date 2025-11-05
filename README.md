@@ -2,71 +2,63 @@
 
 A collection of Claude Code skills to enhance your development workflow.
 
-## Skills
+## Marketplace Overview
 
-### Guideline Refresher
+This repository contains professionally-crafted Claude Code skills that automate common development tasks. Each skill is designed to integrate seamlessly with Claude Code and can be installed via the marketplace or manually.
 
-Automatically analyzes your codebase evolution and refreshes coding guidelines based on actual patterns, PR reviews, and approved code.
+## Available Skills
 
-**Problem it solves:** Coding guidelines get stale after migrations and refactorings. This skill extracts truth from your codebase instead of relying on outdated documentation.
+### 📋 [Guideline Refresher](skills/guideline-refresher/)
 
-**Key features:**
-- Analyzes git commit history for technology adoption and patterns
-- Mines PR review comments to identify recurring feedback themes
-- Examines file organization and naming conventions
-- Generates evidence-based guidelines with specific recommendations
-- Tracks changes from previous guidelines with automatic backups
+Auto-refresh coding guidelines based on codebase patterns, PR reviews, and approved code.
 
-**Quick start:**
-```bash
-# Analyze and refresh guidelines for a specific area
-./skills/guideline-refresher/refresh.sh --area frontend/components --depth standard
+**What it does:** Analyzes your git history, merged PRs, and review comments to generate evidence-based coding guidelines that reflect your actual practices—not outdated documentation.
 
-# Or use directly with Python
-python3 skills/guideline-refresher/refresh_guidelines.py --area backend/api --depth deep
-```
+**Perfect for:**
+- Keeping guidelines current after migrations or refactorings
+- Documenting actual team patterns from approved code
+- Generating area-specific rules (frontend, backend, utils, etc.)
 
-**Documentation:** See [skills/guideline-refresher/README.md](skills/guideline-refresher/README.md)
+**Links:**
+- 📖 [Full Documentation](skills/guideline-refresher/README.md)
+- 🚀 [Usage Examples](EXAMPLES.md)
 
 ## Installation
 
-### As a Claude Code Plugin
+### From Marketplace (Recommended)
 
 ```bash
-# Clone this repository
-git clone https://github.com/jjholmes927/claude-skills.git
+# Add marketplace
+/plugin marketplace add jjholmes927/jjholmes927-claude-skills
 
-# Copy skills to Claude skills directory
-cp -r claude-skills/skills/* ~/.claude/skills/
+# Install plugin
+/plugin install
 
-# Or symlink for easier development
-ln -s "$(pwd)/claude-skills/skills/guideline-refresher" ~/.claude/skills/guideline-refresher
+# Select: jjholmes927-claude-skills
+# Choose skills to install
 ```
 
-### Individual Skills
-
-Each skill can be copied independently to `~/.claude/skills/`:
+### Manual Installation
 
 ```bash
-cp -r skills/guideline-refresher ~/.claude/skills/
+# Clone and install all skills
+git clone https://github.com/jjholmes927/jjholmes927-claude-skills.git
+cd jjholmes927-claude-skills
+./install.sh
 ```
 
-## Requirements
+## Quick Start
 
-- **Python 3.7+** (for most skills)
-- **git** (for guideline-refresher)
-- **gh CLI** (optional, for PR analysis in guideline-refresher)
+Once installed, skills work automatically:
 
-## Usage
+```
+You: "Refresh guidelines for frontend/components"
+Claude: [Uses guideline-refresher skill automatically]
+```
 
-Once installed, Claude Code will automatically detect and use these skills when appropriate. You can also invoke them explicitly:
-
-**In Claude Code chat:**
-> "Refresh guidelines for frontend/components"
-
-**From command line:**
+Or run directly from command line:
 ```bash
-./skills/guideline-refresher/refresh.sh --area frontend/components
+~/.claude/skills/guideline-refresher/refresh.sh --area frontend/components
 ```
 
 ## Contributing

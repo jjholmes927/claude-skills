@@ -2,6 +2,8 @@
 
 A Claude Code skill that automatically analyzes your codebase evolution and refreshes coding guidelines based on actual patterns, PR reviews, and approved code.
 
+> 🚀 **[See Usage Examples](../../EXAMPLES.md)** - Real-world scenarios with output previews
+
 ## Problem
 
 Coding guidelines get stale. After migrations, refactorings, or as team patterns evolve, documented guidelines fall out of sync with reality. Manually updating them is tedious and often misses important patterns that emerge organically.
