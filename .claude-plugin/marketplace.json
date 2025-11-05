@@ -1,13 +1,19 @@
 {
+  "name": "guideline-refresher",
+  "owner": {
+    "name": "jjholmes927"
+  },
+  "description": "Auto-refresh coding guidelines based on codebase patterns, PR reviews, and approved code",
+  "version": "1.0.0",
   "plugins": [
     {
       "name": "guideline-refresher",
+      "description": "Auto-refresh coding guidelines based on codebase patterns, PR reviews, and approved code",
+      "version": "1.0.0",
       "source": {
         "source": "github",
         "repo": "jjholmes927/claude-skills"
-      },
-      "description": "Auto-refresh coding guidelines based on codebase patterns",
-      "version": "1.0.0"
+      }
     }
   ]
 }
