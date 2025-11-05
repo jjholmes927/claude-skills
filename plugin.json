@@ -1,17 +1,11 @@
 {
-  "name": "guideline-refresher",
+  "name": "jjholmes927-claude-skills",
   "version": "1.0.0",
-  "description": "Claude Code skill that automatically refreshes coding guidelines based on codebase evolution, PR reviews, and approved patterns",
+  "description": "Containing my personal Claude Code skills for use in my personal and professionalprojects.",
   "author": {
     "name": "jjholmes927",
     "url": "https://github.com/jjholmes927"
   },
   "repository": "https://github.com/jjholmes927/jjholmes927-claude-skills",
-  "license": "MIT",
-  "skills": {
-    "guideline-refresher": {
-      "path": "skills/guideline-refresher",
-      "description": "Analyzes git history, PR reviews, and file patterns to generate evidence-based coding guidelines for specific areas of your codebase"
-    }
-  }
+  "license": "MIT"
 }
