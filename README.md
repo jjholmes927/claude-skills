@@ -11,7 +11,7 @@ This repository is a Claude Code plugin marketplace containing one plugin, `joel
 | Command | Description |
 |---------|-------------|
 | `/ship` | End-to-end ship workflow: format, commit, push, PR, CI watch, review consolidation |
-| `/review-pr` | Structured multi-pass pull request review |
+| `/review-pr` | Moved to Beam's private `beam-claude-skills` plugin — its CI reads that copy as instructions |
 | `/verify-ui` | Verify a UI flow in a real browser via agent-browser (localhost or staging) |
 | `/pick-up-linear-ticket` | Claim a Linear ticket and set up a branch to start implementation |
 | `/brag-doc` | Generate weekly brag doc entries from GitHub activity |
