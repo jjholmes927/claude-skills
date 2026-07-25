@@ -1,3 +1,7 @@
+---
+description: Verify UI changes in a real browser with agent-browser after implementing a feature, component or visible bugfix — no claim of UI correctness without a screenshot or snapshot as evidence.
+---
+
 # Verify UI
 
 Verify UI changes in a real browser using `agent-browser` after completing implementation work.
