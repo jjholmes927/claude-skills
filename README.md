@@ -10,9 +10,10 @@ This repository is a Claude Code plugin marketplace containing one plugin, `joel
 
 | Command | Description |
 |---------|-------------|
-| `/ship` | End-to-end ship workflow: format, commit, push, PR, CI watch, review consolidation |
+| `/ship` | End-to-end ship workflow: format, commit, verify with evidence (always), push, PR, CI watch, review consolidation |
 | `/review-pr` | Moved to Beam's private `beam-claude-skills` plugin — its CI reads that copy as instructions |
-| `/verify-ui` | Verify a UI flow in a real browser via agent-browser (localhost or staging) |
+| `/verify` | Evidence-based verification of any change — routes UI to /verify-ui; telemetry, APIs and jobs get real invocations and read-backs |
+| `/verify-ui` | UI arm of /verify — prove a UI flow in a real browser via agent-browser (localhost or staging) |
 | `/pick-up-linear-ticket` | Claim a Linear ticket and set up a branch to start implementation |
 | `/brag-doc` | Generate weekly brag doc entries from GitHub activity |
 | `/skill-reviewer` | Review a Claude Code skill for structural and domain quality |

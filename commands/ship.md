@@ -1,15 +1,15 @@
 ---
-description: End-to-end PR workflow — format, commit, verify UI locally, push, open the PR, watch CI fail-fast, then consolidate Bugbot and AI-review feedback. Use when work is ready to become a pull request, or the user asks to ship it.
+description: End-to-end PR workflow — format, commit, verify behaviour with evidence (always, via /verify), push, open the PR, watch CI fail-fast, then consolidate Bugbot and AI-review feedback. Use when work is ready to become a pull request, or the user asks to ship it.
 ---
 
 # Ship
 
-End-to-end workflow: format, branch, commit, verify UI locally, push, PR, fail-fast CI watch, consolidate review feedback.
+End-to-end workflow: format, branch, commit, verify with evidence, push, PR, fail-fast CI watch, consolidate review feedback.
 
 ## Workflow
 
 ```
-Preflight → Format → Stage → Branch (if on main) → Commit → Verify UI (local, if UI changed)
+Preflight → Format → Stage → Branch (if on main) → Commit → Verify (ALWAYS, evidence-based)
    → Simplify → Push → Create PR → Watch CI (required, fail-fast)
                                             │
                                     ┌───────┴───────┐
@@ -94,36 +94,37 @@ Format: `prefix: Imperative description`
 - Add ticket reference in body if relevant (e.g., `INT-107`)
 - For multi-line messages, write the message to a temp file and use `git commit -F <file>`, or use a **quoted** heredoc delimiter (`<<'EOF'`) — an unquoted heredoc lets backticks / `$(...)` in the body get shell-evaluated and mangle the message
 
-## Step 4: Verify UI locally (if applicable)
+## Step 4: Verify (ALWAYS — evidence-based, never silently skipped)
 
-Before simplifying, determine whether the change touches UI (fetch first so `origin/main` is present):
+Every ship verifies behaviour before push — UI or not. Invoke **/verify**: it writes the promise, picks the evidence per change type (UI → verify-ui, telemetry → read-back, API/job → real invocation), and reports ✅/🟡/🔴 with the evidence shown. "Tests pass" is not verification.
 
-```bash
-git fetch origin main -q 2>/dev/null
-git diff origin/main...HEAD --name-only | grep -E '\.(tsx?|jsx?|css|scss)$|^app/javascript/|^app/views/|^app/components/'
-```
-
-**If UI files changed**, verify against THIS clone's local dev server (parallel-dev setup), not staging:
-
-1. Resolve this clone's dev-server port (each parallel-dev clone sets its own in `.env.local`):
+1. **Tooling preflight — repair, don't skip.** If the diff touches UI paths:
+   ```bash
+   git fetch origin main -q 2>/dev/null
+   git diff origin/main...HEAD --name-only | grep -E '\.(tsx?|jsx?|css|scss)$|^app/javascript/|^app/views/|^app/components/'
+   ```
+   and agent-browser is missing or stale, **install/update it now** — do not skip UI verification because the tool is absent:
+   ```bash
+   which agent-browser || (npm i -g agent-browser && agent-browser install)
+   ```
+   (/verify's Step 4 has the freshness check — run it.)
+2. **Server preflight.** Verify against THIS clone's local dev server (parallel-dev setup), not staging:
    ```bash
    PORT=$(grep -E '^PORT=' .env.local | cut -d= -f2); PORT=${PORT:-3000}
-   ```
-2. Health-check that the server is actually up for THIS clone:
-   ```bash
    curl -s -o /dev/null -w "%{http_code}" "http://localhost:${PORT}"
    ```
-   - `200`/`302` → up, continue.
-   - Not up → start it in the **background** (never run `bin/dev` in the foreground — it blocks) and poll until ready:
-     ```bash
-     bin/dev >/tmp/dev-${PORT}.log 2>&1 &
-     for i in $(seq 1 30); do curl -sf -o /dev/null "http://localhost:${PORT}" && break; sleep 2; done
-     ```
-     If it still isn't up after the wait, **skip local verify and note it** — don't block shipping.
-3. Invoke verify-ui against the confirmed URL (`http://localhost:${PORT}`). It drives the local app with `agent-browser` — no staging deploy needed, so this runs before push. Determine the verification plan from the diff and the change's intent (your task / commit message) — exercise only the UI paths that changed, not the whole app.
-4. If verify-ui surfaces a real breakage, fix it, re-stage, and commit before continuing. Verification is gating here (pre-push) — but only after the health-check confirms a real server; a down server is "skipped", not a breakage to chase.
-
-**If no UI files changed:** skip this step.
+   Not up → start it in the **background** (never run `bin/dev` in the foreground — it blocks) and poll until ready:
+   ```bash
+   bin/dev >/tmp/dev-${PORT}.log 2>&1 &
+   for i in $(seq 1 30); do curl -sf -o /dev/null "http://localhost:${PORT}" && break; sleep 2; done
+   ```
+   A down server is an environment to fix, not a reason to skip. If it genuinely won't boot, that becomes a declared 🔴, never a quiet omission.
+3. **Run /verify scoped to the diff** — exercise only the paths that changed, against `http://localhost:${PORT}` for the UI arm.
+4. **Real breakage → fix, re-stage, commit, re-verify.** Verification is gating pre-push.
+5. **Gate on the verdict:**
+   - ✅ / 🟡 → continue. The evidence lines go in the ship summary.
+   - 🔴 because verification was possible but not done → **STOP. Do not push.** Go do it.
+   - 🔴 genuinely not verifiable here (hardware, prod-only data) → push is allowed, but **SHOUT**: the ship summary MUST lead with `🔴 NOT VERIFIED LOCALLY — <reason>`, and the post-ship verification plan goes in the PR body's Worth-noting section. Never bury it.
 
 ## Step 5: Simplify
 
@@ -142,7 +143,7 @@ git commit  # New commit with fixes from simplify
 
 If no issues were found, proceed directly to push.
 
-If `/simplify` changed any UI files (same globs as Step 4), re-run Step 4's local verification before pushing — those edits weren't covered by the earlier pass.
+If `/simplify` changed any files, re-run Step 4's verification for the paths it touched before pushing — those edits weren't covered by the earlier pass.
 
 ## Step 6: Push + Create PR
 
@@ -223,6 +224,8 @@ Code review now runs automatically in CI: the `AI code review` workflow posts a 
 
 ## Red Flags — STOP
 
+- About to push without a /verify verdict for this diff → back to Step 4; "tests pass" is not a verdict
+- Verification quietly skipped (missing tool, down server) → install the tool / start the server, or declare 🔴 loudly — silence is prohibited
 - About to push to `main` directly → create a branch first
 - About to force-push → ask user for confirmation
 - No changes detected → do not create empty commits

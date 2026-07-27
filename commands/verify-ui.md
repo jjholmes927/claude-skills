@@ -1,5 +1,5 @@
 ---
-description: Verify UI changes in a real browser with agent-browser after implementing a feature, component or visible bugfix — no claim of UI correctness without a screenshot or snapshot as evidence.
+description: UI arm of /verify — prove a UI change in a real browser with agent-browser: target resolution (localhost or PR staging), open→locate→act→verify→cleanup, screenshots as evidence. No claim of UI correctness without a screenshot or snapshot. Invoke directly for pure-UI checks; /verify routes here when the diff touches UI.
 ---
 
 # Verify UI
@@ -26,9 +26,9 @@ Invoke this command when:
 
 ## When NOT to Use
 
-- After backend-only changes (API logic, database migrations, background jobs)
+- After backend-only changes (API logic, database migrations, background jobs) → use **/verify**, which owns the non-UI evidence paths (read-backs, real invocations)
 - For automated test suites — use the project's test runner instead
-- For verifying non-visual behavior (API responses, data processing)
+- For verifying non-visual behavior (API responses, data processing) → **/verify**
 - When there is no running target (no localhost, no PR with staging deployment, and no URL provided)
 - For TypeScript type refactors, build config changes, or utility function changes with no visual impact
 
@@ -45,14 +45,18 @@ $ARGUMENTS — Optional: target URL, PR reference, or empty for auto-detect.
 
 Before running any verification, resolve the target URL:
 
-### Step 0a: Check agent-browser is available
+### Step 0a: Ensure agent-browser is installed and current
+
+Missing tooling is a task, not an excuse — install it, don't stop:
 
 ```bash
-which agent-browser
-# If not found: npm i -g agent-browser && agent-browser install
+which agent-browser || (npm i -g agent-browser && agent-browser install)
+INSTALLED=$(npm ls -g agent-browser --parseable --long 2>/dev/null | sed -n 's/.*agent-browser@//p')
+LATEST=$(npm view agent-browser version 2>/dev/null)
+[ -n "$LATEST" ] && [ "$LATEST" != "$INSTALLED" ] && npm i -g agent-browser@latest && agent-browser install
 ```
 
-If not found, report the issue and stop.
+The freshness check is non-fatal — registry unreachable → proceed on the installed version and say so. Only if **installation itself fails** do you stop, and that failure is reported as a 🔴 (never a quiet fallback to "tests pass").
 
 ### Step 0b: Resolve target URL
 
