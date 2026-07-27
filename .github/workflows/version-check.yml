@@ -55,3 +55,30 @@ jobs:
             echo "::error::Plugin content changed but version was not bumped (still $NEW). Bump plugin.json and both marketplace.json version fields."
             exit 1
           fi
+
+  frontmatter-valid:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: YAML frontmatter parses in every command and skill
+        run: |
+          ruby -ryaml -e '
+            failures = []
+            Dir["commands/*.md", "skills/**/SKILL.md"].each do |f|
+              lines = File.read(f).lines
+              next unless lines.first&.strip == "---"
+              close = lines[1..].index { |l| l.strip == "---" }
+              if close.nil?
+                failures << "#{f}: unterminated frontmatter"
+                next
+              end
+              begin
+                YAML.safe_load(lines[1, close].join)
+              rescue => e
+                failures << "#{f}: #{e.message}"
+              end
+            end
+            failures.each { |m| puts "::error::#{m}" }
+            abort "#{failures.size} file(s) with invalid frontmatter" unless failures.empty?
+            puts "Frontmatter valid in all commands and skills."
+          '

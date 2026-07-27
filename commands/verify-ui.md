@@ -1,5 +1,5 @@
 ---
-description: UI arm of /verify — prove a UI change in a real browser with agent-browser: target resolution (localhost or PR staging), open→locate→act→verify→cleanup, screenshots as evidence. No claim of UI correctness without a screenshot or snapshot. Invoke directly for pure-UI checks; /verify routes here when the diff touches UI.
+description: UI arm of /verify — prove a UI change in a real browser with agent-browser. Owns target resolution (localhost or PR staging), the open→locate→act→verify→cleanup loop, and screenshots as evidence; no claim of UI correctness without one. Invoke directly for pure-UI checks — /verify routes here when the diff touches UI.
 ---
 
 # Verify UI
