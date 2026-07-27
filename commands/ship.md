@@ -1,3 +1,7 @@
+---
+description: End-to-end PR workflow — format, commit, verify UI locally, push, open the PR, watch CI fail-fast, then consolidate Bugbot and AI-review feedback. Use when work is ready to become a pull request, or the user asks to ship it.
+---
+
 # Ship
 
 End-to-end workflow: format, branch, commit, verify UI locally, push, PR, fail-fast CI watch, consolidate review feedback.
