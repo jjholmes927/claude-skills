@@ -38,7 +38,7 @@ Path: [SKILL_PATH]
 
 Content:
 ---
-[FULL SKILL.MD CONTENT]
+[SKILL_CONTENT]
 ---
 
 ## Review process
@@ -157,7 +157,7 @@ Domain: [SKILL_DOMAIN]
 
 Content:
 ---
-[FULL SKILL.MD CONTENT]
+[SKILL_CONTENT]
 ---
 
 ## Review process
