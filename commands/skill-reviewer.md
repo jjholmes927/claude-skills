@@ -11,14 +11,14 @@ Review a Claude Code skill by dispatching two parallel subagents — one for str
 ## Parameters
 
 Parse from user input or context:
-- **skill_path** (required) — Path to the SKILL.md file to review. If not provided, ask the user.
+- **skill_path** (required) — Path to the file to review: a skill's SKILL.md or a command's .md file. If not provided, ask the user.
 - **domain** (optional) — Brief description of the skill's domain (e.g., "Sentry error monitoring", "Capybara testing"). If not provided, infer from the skill content.
 
 ## Steps
 
 ### 1. Read the skill
 
-Read the full SKILL.md at the given path. If there are companion files (references, scripts, examples), note them but focus the review on SKILL.md.
+Read the full file at the given path — a skill's SKILL.md or a command's .md. If there are companion files (references, scripts, examples), note them but focus the review on the main file.
 
 ### 2. Dispatch two parallel subagents
 
@@ -245,8 +245,8 @@ After applying fixes, re-read the skill for a quick sanity check. Do not re-run 
 /joel-workflow:skill-reviewer .claude/skills/my-skill/SKILL.md
 → Reviews my-skill with its subject area as the domain
 
-/joel-workflow:skill-reviewer ~/.claude/skills/browser-verification/SKILL.md
-→ Reviews browser-verification with browser automation as the domain
+/joel-workflow:skill-reviewer commands/brag-doc.md
+→ Reviews a command file against the command-specific criteria
 
 /joel-workflow:skill-reviewer
 → Prompts for which skill to review
