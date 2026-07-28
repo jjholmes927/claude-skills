@@ -1,5 +1,5 @@
 ---
-description: Review a Claude Code skill's quality after creation or editing. Dispatches parallel subagents for structural review against superpowers patterns and domain-specific research.
+description: Use when a Claude Code skill or command has been created or edited and needs a quality review, or when checking a skill against current Anthropic/superpowers authoring best practices.
 ---
 
 # Skill Reviewer
@@ -52,41 +52,72 @@ Content:
      writing-skills, brainstorming
 
    Official Anthropic guides:
+   - Fetch https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices
+     (if the fetch fails, web-search "Anthropic agent skills best practices")
    - ~/.claude/plugins/marketplaces/claude-plugins-official/plugins/skill-creator/skills/skill-creator/SKILL.md
    - ~/.claude/plugins/marketplaces/claude-plugins-official/plugins/plugin-dev/skills/skill-development/SKILL.md
 
-   Also search the web for current Anthropic documentation on skill/command authoring.
+   If the fetched docs contradict the criteria below, the fetched docs win — note
+   the discrepancy in your review so the reviewer command can be updated.
 
 2. Evaluate against these criteria:
 
    FRONTMATTER
    - Is it a skill (name + description in SKILL.md) or command (description only in .md)?
-   - Description: triggering conditions with specific phrases, NOT a workflow summary
-   - allowed-tools: listed if the skill uses MCP or restricted tools
+   - name: max 64 chars; lowercase letters, numbers, hyphens only; no XML tags;
+     no reserved words ("anthropic", "claude"); gerund form preferred (processing-pdfs)
+   - Description: third person; what the skill does AND when to use it, with specific
+     trigger phrases — NOT a workflow summary (agents follow the summary instead of
+     reading the body)
    - Max 1024 chars for description
+   - allowed-tools: listed if the skill uses MCP or restricted tools
 
    STRUCTURE
    - Core principle / Iron Law statement near the top
    - When to Use / When NOT to Use sections (skills) or Parameters section (commands)
-   - Clear step-by-step workflow
+   - Clear step-by-step workflow; copyable checklist for complex multi-step flows
+   - Feedback loops where output quality matters (run validator → fix → repeat)
    - Red Flags — STOP section for critical guardrails (if the skill takes actions)
    - Common Rationalizations table (if the skill enforces discipline)
    - Error handling for tool failures
+
+   DEGREES OF FREEDOM
+   - Specificity matches fragility: fragile or must-be-sequenced operations get exact
+     commands with "do not modify" (low freedom); context-dependent judgment gets
+     heuristics (high freedom)
+   - One default approach with an escape hatch, not a menu of alternatives
 
    PROMPT ENGINEERING
    - <EXTREMELY-IMPORTANT> tags for critical rules
    - Emphasis markers preventing Claude from skimming past guardrails
    - Decision trees for complex classification logic
+   - Concrete input/output examples where output style matters
 
-   TOKEN EFFICIENCY
-   - Body under 5,000 words (ideal: 1,500-2,000 for skills, flexible for commands)
-   - Reference material in separate files if large
+   CONTENT
+   - Concise: assumes Claude is smart; every paragraph justifies its token cost
+   - Consistent terminology (one term per concept, used throughout)
+   - No time-sensitive information (deprecated details go in an "old patterns" section)
+   - Forward-slash paths only, never Windows-style
+
+   TOKEN EFFICIENCY & PROGRESSIVE DISCLOSURE
+   - SKILL.md body under 500 lines (commands more flexible); split into reference
+     files when approaching the limit
+   - Reference files linked ONE level deep from SKILL.md (nested references get
+     partially read); files >100 lines start with a table of contents
    - Progressive disclosure (metadata → body → references)
 
    TOOL USAGE (if applicable)
    - Correct tool names and parameter formats
+   - MCP tools referenced by fully qualified name (ServerName:tool_name)
    - ToolSearch step for deferred/MCP tools
+   - Dependencies stated explicitly, never assumed installed
    - Fallback guidance for failures
+
+   BUNDLED SCRIPTS (if the skill ships code)
+   - Scripts handle their own error conditions rather than deferring to Claude
+   - No unexplained constants (timeouts, retry counts need justification)
+   - Instructions say whether each script is executed or read as reference
+   - Plan-validate-execute pattern for batch or destructive operations
 
    SAFETY (if the skill takes actions)
    - Confirmation before destructive/irreversible actions
@@ -94,6 +125,10 @@ Content:
 
    OUTPUT FORMAT (if the skill produces output)
    - Structured, actionable, includes links where appropriate
+
+   TESTING
+   - Evidence the skill was tested against real scenarios (evaluations, baseline
+     runs); flag as a gap if there is none
 
 3. Return your review as:
 
