@@ -101,6 +101,8 @@ Whole-branch check against the approved plan: every task present, no plan drift,
 ## Stage 7 — Ship
 
 1. The plan file never enters the branch — docs/plans/ is a local working document; the PR carries implementation only. Invoke the ship command from this plugin inside the worktree. Let it format, commit leftovers, push, open the PR (What/Why), and watch CI. Before ship commits leftovers, confirm `git status` shows no plan file staged (it should be gitignored; if not, leave it untracked).
+
+   **Red flag — hand-rolling Stage 7 is a violation.** Running `git push` / `gh pr create` / a CI watch directly instead of invoking ship skips ship's verify gate, and transcript audits show this is the main path by which unverified changes reach PRs. Stacked PRs, multi-repo pushes, and "it's just a small branch" are not exemptions: invoke ship per branch. If ship genuinely cannot run (e.g. its skill is unavailable in this session), say so in the Stage 7 report and run /verify manually before any push.
 2. Post each carried-forward finding as a PR comment: `gh pr comment <num> --body "..."` prefixed with `[e2e unresolved]`.
 3. CI failures (**CI fix: 2 max**): hand the failure log to `e2e-codex.sh resume` (effort `high`, most relevant task session), push, re-watch. Record each round in `.e2e/sessions.tsv` and count from the file, never from memory. After 2 rounds, hard-stop and report.
 4. Report: PR URL, tasks completed, fix-loop counts, unresolved findings, total codex sessions.

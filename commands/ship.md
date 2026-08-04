@@ -125,6 +125,9 @@ Every ship verifies behaviour before push — UI or not. Invoke **/verify**: it 
    - ✅ / 🟡 → continue. The evidence lines go in the ship summary.
    - 🔴 because verification was possible but not done → **STOP. Do not push.** Go do it.
    - 🔴 genuinely not verifiable here (hardware, prod-only data) → push is allowed, but **SHOUT**: the ship summary MUST lead with `🔴 NOT VERIFIED LOCALLY — <reason>`, and the post-ship verification plan goes in the PR body's Worth-noting section. Never bury it.
+6. **The verdict block is a push precondition.** The ship summary MUST contain the verify verdict line(s) — `✅/🟡/🔴` per promise, each with its evidence (command + observed output) — pasted verbatim, not paraphrased as "verified". Invoking /verify is not the gate; the emitted verdict is. A verify launch that produced no verdict block counts as a skip: go back and produce it before push.
+
+**Pre-declared verification** (evidence gathered before ship was invoked, cited via ship's args): acceptable only when the args quote the actual evidence — the command and its observed output. An unquoted assertion ("already verified", "no local auth so CI will cover it") does not stand; run /verify anyway. Untested premises about the environment (e.g. "auth is broken locally") must be re-tested at ship time before they excuse anything.
 
 ## Step 5: Simplify
 
@@ -168,7 +171,7 @@ PR_NUMBER=$(gh pr view --json number -q .number)
 
 ## Step 7: Watch CI (fail fast)
 
-Watch only the **required** checks and bail the instant one fails — don't block on slow non-required checks (branch deploy, Chromatic, the review bots). Wait for checks to register first, or `--watch` hits a "no checks yet" race right after PR creation, returns non-zero, and falsely trips the fix loop:
+Watch all checks and bail the instant one fails. Do NOT use `--required`: none of our repos configure branch-protection required checks, so `--required` returns "no required checks reported" and the watch silently no-ops — this failed in every repo it was tried in. Wait for checks to register first, or `--watch` hits a "no checks yet" race right after PR creation, returns non-zero, and falsely trips the fix loop:
 
 ```bash
 for i in $(seq 1 12); do
@@ -176,27 +179,27 @@ for i in $(seq 1 12); do
   [ "${n:-0}" -gt 0 ] && break
   sleep 5
 done
-gh pr checks <PR_NUMBER> --watch --fail-fast --required --interval 20
+gh pr checks <PR_NUMBER> --watch --fail-fast --interval 20
 ```
 
-- **Exit 0** → all required checks passed → go to Step 8.
-- **Non-zero** → a required check failed and `--fail-fast` bailed immediately. Fix it now:
-  1. Identify the failed check(s): `gh pr checks <PR_NUMBER> --required` (look for `fail`/`X`).
+If the repo has no CI at all (zero checks after the registration poll), say so in the ship summary and move on — don't invent a gate.
+
+- **Exit 0** → all checks passed → go to Step 8.
+- **Non-zero** → a check failed and `--fail-fast` bailed immediately. First check whether the failure is a slow non-blocking check (branch deploy, Chromatic, a review bot still running) — if so, note it and keep watching the rest. For real CI failures, fix now:
+  1. Identify the failed check(s): `gh pr checks <PR_NUMBER>` (look for `fail`/`X`).
   2. Fetch the errors:
      - RSpec → use `.claude/skills/fetching-ci-errors/fetch_ci_errors` if present.
      - ESLint / TypeScript / Prettier / other → find the failed run, then view its log: `gh pr checks <PR_NUMBER> --json name,bucket,link --jq '.[]|select(.bucket=="fail").link'`, then `gh run view <run-id> --log-failed` (run-id from that link).
   3. Fix locally, run to verify, commit (new commit, NOT amend), push.
   4. Re-run the watch. **Max 3 fix rounds**, then stop and report.
 
-Why these flags:
-- `--fail-fast` returns on the first failure, so you fix immediately instead of waiting for the whole suite.
-- `--required` ignores noisy non-required checks (Chromatic, Bugbot, the AI review) so the watch can't hang on slow/irrelevant ones — those are handled in Step 8.
+A failed check may only be excluded from the gate with evidence — a log showing it's unrelated infra flake, or a re-run that passes. "Probably a flake" on an empty log is not evidence.
 
 ## Step 8: Consolidate review feedback
 
 Code review now runs automatically in CI: the `AI code review` workflow posts a four-agent + correctness comment, and Cursor Bugbot posts its own. **Don't run `/review-pr` locally** — wait for both and act on their combined output.
 
-1. Wait for both review bots to post — they're non-required (Step 7's `--required` watch didn't wait for them) and often start only after CI is green. Poll, bounded to ~3 minutes:
+1. Wait for both review bots to post — they often start only after CI is green. Poll, bounded to ~3 minutes:
    ```bash
    for i in $(seq 1 9); do
      gh pr checks <PR_NUMBER> --json name,state \
