@@ -203,13 +203,24 @@ agent-browser errors
 # Additional get commands: get html, get value, get attr, get count, get styles
 ```
 
-For responsive verification:
+### Step 4b: Mobile check (MANDATORY for layout-affecting changes)
+
+Desktop-only verification is how mobile overflow bugs ship (INT-742 audio selector row, Aug 2026: two fixed-width pills fit the desktop card, bled out of their container at 425px, found in production). If the change adds, removes, or resizes anything rendered — components, containers, rows, buttons — verify at mobile dimensions too:
+
 ```bash
-agent-browser set viewport 375 812   # iPhone-sized
+agent-browser set viewport 375 812   # iPhone-sized; also try 425 740 for small tablets
 agent-browser screenshot --full mobile.png
 agent-browser set viewport 1280 720  # Desktop
 agent-browser screenshot --full desktop.png
 ```
+
+Don't rely on eyeballing screenshots for overflow — measure it:
+
+```bash
+agent-browser eval "(() => { const el = document.querySelector('<changed-element>'); const box = el.closest('<its-container>'); return JSON.stringify({ bleeds: el.getBoundingClientRect().right > box.getBoundingClientRect().right + 0.5, docScrollW: document.documentElement.scrollWidth, viewport: window.innerWidth }) })()"
+```
+
+`docScrollW > viewport` means the page scrolls horizontally — always a failure. Skip this step only for changes with no rendered output (analytics wiring, aria attributes, console messaging), and say so in the report.
 
 ### Step 5: Cleanup (MANDATORY)
 
@@ -265,6 +276,9 @@ After verification, report using this structure:
 - screenshot-1.png — description
 - screenshot-2.png — description
 
+### Mobile
+Verified at [viewport(s)] — no overflow / N/A (no rendered output, reason)
+
 ### Console errors
 None / list of errors
 
@@ -282,6 +296,7 @@ If you catch yourself thinking:
 - "Browser verification would take too long"
 - "It's just a CSS change, it'll be fine"
 - "The tests pass, so the UI must be correct"
+- "It fits on my desktop viewport, mobile will be fine"
 
 **STOP. These are exactly the cases where browser verification catches real issues.**
 
