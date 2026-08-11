@@ -17,6 +17,9 @@ State in one or two lines the observable behaviour the change promises — what 
 | Change | Evidence bar | How |
 |---|---|---|
 | UI / interaction / visual | Screenshot or snapshot of the real page doing the thing | Invoke **verify-ui** — it owns target resolution, auth, and the agent-browser playbook |
+
+**UI routing is decided by file paths, not judgement.** If the diff touches any of:
+`app/javascript/`, `app/views/`, `app/components/`, `app/avo/`, `*.tsx|*.jsx|*.css|*.scss`, or locale/translation files consumed by the frontend (`config/locales/`, `*-translations.json`) — the change IS a UI change and routes to **verify-ui**, even when a server-side read-back would be easier. Model-level facts ("the key resolves", "the option list is correct") may supplement but never substitute for the rendered page. If the browser arm is genuinely impossible right now, the report carries an explicit 🔴 for the UI promise — never a server-side ✅ standing in for it, and never silence.
 | Telemetry / audit / analytics | The emitted row or event **read back from storage**, with the payload fields the change promises | Drive the path in the running app, then query it back (console/runner, SQL, log tail). Row-exists is not enough — assert the fields |
 | API / service behaviour | Real request → response, AND the side effect | curl or console/runner against the dev server, then observe the effect |
 | Background job | The job executed and its outcome record observed | Enqueue and perform inline, read the result record |
