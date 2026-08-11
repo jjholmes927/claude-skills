@@ -160,6 +160,8 @@ If no PR exists yet, create one with `gh pr create`.
 
 Invoke the **`writing-pr-descriptions`** skill and follow it exactly — it owns the format (What / Why / Worth-noting), the 3-bullet / 2–3-sentence section caps, and the hard rules (one idea per sentence, outcome not inventory, stack etiquette, no Fixes footer, no attribution).
 
+**If Step 4 produced UI verification screenshots, they go in the PR body — gating.** Use verify-ui's screenshots-branch recipe (private repos can't hot-link CLI-attached images) and include the measurement line under each image. A visual change shipping without its evidence in the body is the same failure as skipping verification: the proof existed and reviewers never saw it (INT-738/INT-742, Aug 2026 — three UI PRs merged screenshot-less while the evidence sat in chat).
+
 ### Creating the PR
 
 Write the body to a temp file (Write tool or an editor) and pass it with `--body-file` — never inline the body in `--body "..."` or a heredoc, because backticks in the body get shell-evaluated and mangle it. Capture the new PR's number so Steps 7–8 can use it:
