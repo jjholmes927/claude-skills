@@ -34,7 +34,7 @@ If any Linear MCP tool call fails at any point in this workflow, report the erro
 Before any Linear API calls, load the required tools:
 
 ```
-ToolSearch(query="select:mcp__claude_ai_Linear__get_issue,mcp__claude_ai_Linear__save_issue,mcp__claude_ai_Linear__get_user,mcp__claude_ai_Linear__get_project,mcp__claude_ai_Linear__get_initiative,mcp__claude_ai_Linear__list_comments")
+ToolSearch(query="select:mcp__linear-server__get_issue,mcp__linear-server__save_issue,mcp__linear-server__get_user,mcp__linear-server__get_project,mcp__linear-server__get_initiative,mcp__linear-server__list_comments")
 ```
 
 If Linear MCP is unavailable, stop and tell the user — this command requires it.
@@ -42,7 +42,7 @@ If Linear MCP is unavailable, stop and tell the user — this command requires i
 ## Step 1: Fetch Ticket
 
 ```
-mcp__claude_ai_Linear__get_issue(id: "<TICKET_ID>", includeRelations: true)
+mcp__linear-server__get_issue(id: "<TICKET_ID>", includeRelations: true)
 ```
 
 Capture:
@@ -60,22 +60,22 @@ If the ticket doesn't exist, stop and tell the user.
 
 **Blocking/blocked-by tickets:** For each relation from Step 1, fetch the related ticket:
 ```
-mcp__claude_ai_Linear__get_issue(id: "<RELATED_ID>")
+mcp__linear-server__get_issue(id: "<RELATED_ID>")
 ```
 
 **Project context** (if ticket belongs to a project):
 ```
-mcp__claude_ai_Linear__get_project(query: "<PROJECT_NAME>", includeMilestones: true)
+mcp__linear-server__get_project(query: "<PROJECT_NAME>", includeMilestones: true)
 ```
 
 **Initiative context** (if project belongs to an initiative):
 ```
-mcp__claude_ai_Linear__get_initiative(query: "<INITIATIVE_NAME>")
+mcp__linear-server__get_initiative(query: "<INITIATIVE_NAME>")
 ```
 
 **Comments** (for discussion context):
 ```
-mcp__claude_ai_Linear__list_comments(issueId: "<TICKET_ID>")
+mcp__linear-server__list_comments(issueId: "<TICKET_ID>")
 ```
 
 Run fetches in parallel where possible. For large epics/projects, fetch just enough context to understand where this ticket fits — don't load the entire project history.
@@ -96,12 +96,12 @@ If existing work is found (branches, open/closed PRs), surface it prominently. I
 **Assign to current user and move to In Progress** in a single call (if needed):
 
 ```
-mcp__claude_ai_Linear__get_user(query: "me")
+mcp__linear-server__get_user(query: "me")
 ```
 
 Check current assignee and status. If either needs updating:
 ```
-mcp__claude_ai_Linear__save_issue(id: "<TICKET_ID>", assignee: "me", state: "In Progress")
+mcp__linear-server__save_issue(id: "<TICKET_ID>", assignee: "me", state: "In Progress")
 ```
 
 Report what was updated (e.g., "Assigned to you and moved to In Progress").
