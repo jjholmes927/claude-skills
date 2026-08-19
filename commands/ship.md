@@ -124,7 +124,7 @@ Every ship verifies behaviour before push — UI or not. Invoke **/verify**: it 
 5. **Gate on the verdict:**
    - ✅ / 🟡 → continue. The evidence lines go in the ship summary.
    - 🔴 because verification was possible but not done → **STOP. Do not push.** Go do it.
-   - 🔴 genuinely not verifiable here (hardware, prod-only data) → push is allowed, but **SHOUT**: the ship summary MUST lead with `🔴 NOT VERIFIED LOCALLY — <reason>`, and the post-ship verification plan goes in the PR body's Worth-noting section. Never bury it.
+   - 🔴 genuinely not verifiable here (hardware, prod-only data) → push is allowed, but **SHOUT**: the ship summary MUST lead with `🔴 NOT VERIFIED LOCALLY — <reason>`, and the post-ship verification plan goes at the end of the PR body. Never bury it.
 6. **The verdict block is a push precondition.** The ship summary MUST contain the verify verdict line(s) — `✅/🟡/🔴` per promise, each with its evidence (command + observed output) — pasted verbatim, not paraphrased as "verified". Invoking /verify is not the gate; the emitted verdict is. A verify launch that produced no verdict block counts as a skip: go back and produce it before push.
 
 **Pre-declared verification** (evidence gathered before ship was invoked, cited via ship's args): acceptable only when the args quote the actual evidence — the command and its observed output. An unquoted assertion ("already verified", "no local auth so CI will cover it") does not stand; run /verify anyway. Untested premises about the environment (e.g. "auth is broken locally") must be re-tested at ship time before they excuse anything.
@@ -158,7 +158,9 @@ If no PR exists yet, create one with `gh pr create`.
 
 ### Writing the body
 
-Invoke the **`writing-pr-descriptions`** skill and follow it exactly — it owns the format (What / Why / Worth-noting), the 3-bullet / 2–3-sentence section caps, and the hard rules (one idea per sentence, outcome not inventory, stack etiquette, no Fixes footer, no attribution).
+Invoke the **`writing-pr-descriptions`** skill and follow it exactly — it owns the format (What / Why), the 3-bullet / 2–3-sentence section caps, and the hard rules (one idea per sentence, outcome not inventory, stack etiquette, no Fixes footer, no attribution).
+
+**If Step 4 produced UI verification screenshots, they go in the PR body — gating.** Use verify-ui's screenshots-branch recipe (private repos can't hot-link CLI-attached images) and include the measurement line under each image. A visual change shipping without its evidence in the body is the same failure as skipping verification: the proof existed and reviewers never saw it (INT-738/INT-742, Aug 2026 — three UI PRs merged screenshot-less while the evidence sat in chat).
 
 ### Creating the PR
 

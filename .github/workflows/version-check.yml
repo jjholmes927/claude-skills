@@ -30,7 +30,6 @@ jobs:
           fi
 
   version-bumped-on-content-change:
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,8 +38,16 @@ jobs:
 
       - name: Require a version bump when plugin content changes
         run: |
-          BASE="origin/${{ github.base_ref }}"
-          git fetch origin "${{ github.base_ref }}"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="origin/${{ github.base_ref }}"
+            git fetch origin "${{ github.base_ref }}"
+          else
+            BASE="${{ github.event.before }}"
+            if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+              echo "No comparable base for this push — skipping."
+              exit 0
+            fi
+          fi
           CHANGED=$(git diff --name-only "$BASE"...HEAD -- skills commands install.sh plugin.json .claude-plugin/marketplace.json)
           if [ -z "$CHANGED" ]; then
             echo "No plugin content changed — version bump not required."

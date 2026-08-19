@@ -288,6 +288,25 @@ None / list of issues with severity
 
 This summary lets the developer async-review what was validated without being blocked.
 
+## Screenshots go on the PR, not just in chat
+
+If this verification is for a change that has (or is about to have) a PR, the key screenshots belong **in the PR body** — chat evidence disappears; the PR is what reviewers and future readers see. This is not optional for visual changes (INT-738/INT-742, Aug 2026: three UI PRs merged with no screenshots; the evidence existed but only ever appeared in chat).
+
+Private repos can't hot-link user-attachment URLs from CLI-created bodies. Use the screenshots-branch recipe:
+
+```bash
+git checkout -b <user>-<TICKET>-screenshots origin/main   # or reuse the existing screenshots branch
+cp <shots>.png . && git add *.png && git commit -m "chore: <TICKET> screenshots" && git push -u origin HEAD
+```
+
+Embed with the raw-blob form, then verify each URL via the contents API (a plain `curl` on `blob/...?raw=true` 404s on private repos even when the file exists):
+
+```markdown
+<img src="https://github.com/<org>/<repo>/blob/<screenshots-branch>/<file>.png?raw=true" width="300">
+```
+
+Include the measurement line under the image (viewport, overflow result), not just the picture. Before/after pairs when the change fixes something visual.
+
 ## Red Flags — STOP
 
 If you catch yourself thinking:
@@ -297,6 +316,7 @@ If you catch yourself thinking:
 - "It's just a CSS change, it'll be fine"
 - "The tests pass, so the UI must be correct"
 - "It fits on my desktop viewport, mobile will be fine"
+- "The screenshots are in the chat, that's enough" — they go on the PR
 
 **STOP. These are exactly the cases where browser verification catches real issues.**
 
