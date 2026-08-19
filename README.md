@@ -44,6 +44,10 @@ Full delivery pipeline: Claude/Fable plans with one approval gate, codex/Sol imp
 
 Pulls codex/Sol in as a read-only second pair of eyes on whatever workflow is running: cross-model review, corroboration of a conclusion, or a blind second opinion on a design — with graded reasoning effort and honest disagreement reporting.
 
+### 🔁 [Dev Workflow Iterate](skills/dev-workflow-iterate/)
+
+Periodic review of the workflow itself: instruments-first evidence, an adversarial panel that attacks the draft, a blind Sol opinion, and deletion-first output. Light mode (~30 min pulse) or deep mode (quarterly, expensive). Iron laws: prior art before proposals, live-verify tool claims, no new surfaces.
+
 ### ✍️ [Writing PR Descriptions](skills/writing-pr-descriptions/)
 
 PR bodies a reviewer absorbs in 30 seconds: What / Why with 3-bullet section caps, one idea per sentence, outcome-not-inventory, stack etiquette. Ships with [VOICE.md](skills/writing-pr-descriptions/VOICE.md) — Joel's mined tone-of-voice guide (guidelines; SKILL.md rules always win). Owns the body format for `/ship` and works standalone to draft or tighten any PR description.
