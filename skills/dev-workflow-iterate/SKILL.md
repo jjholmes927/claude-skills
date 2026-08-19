@@ -1,6 +1,6 @@
 ---
 name: dev-workflow-iterate
-description: Periodic review of the dev workflow itself — what's working, what's missing, what's rotting — via instruments-first evidence, an adversarial panel, and deletion-first output. Use when workflow friction accumulates, after a big process change beds in, or roughly quarterly. Two modes: light (~30 min, no fleet) and deep (multi-agent, expensive).
+description: "Periodic review of the dev workflow itself — what's working, what's missing, what's rotting — via instruments-first evidence, an adversarial panel, and deletion-first output. Use when workflow friction accumulates, after a big process change beds in, or roughly quarterly. Two modes: light (~30 min, no fleet) and deep (multi-agent, expensive)."
 ---
 
 # Dev workflow iterate
