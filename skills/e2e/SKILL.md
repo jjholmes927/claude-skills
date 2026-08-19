@@ -68,7 +68,13 @@ codex CLI (authenticated), gh CLI, superpowers plugin, this plugin's ship + pick
 
 ## Stage 2 — Workspace
 
-Invoke superpowers:using-git-worktrees. Branch: `jjholmes927-<slug>[-TICKET]`. Record the worktree path. Create `.e2e/` inside it and append `.e2e/` to the file at `git -C <worktree> rev-parse --git-path info/exclude` (in a worktree `.git` is a file, so the literal `.git/info/exclude` path does not exist; this resolves the real exclude file). This MUST happen before Stage 3 writes anything, else the no-diff check misreads `.e2e/` noise.
+Branch: `jjholmes927-<slug>[-TICKET]`. Resolve the workspace in this order:
+
+1. **Already isolated?** If `[ -n "$CLAUDE_JOB_DIR" ]` AND `git rev-parse --git-common-dir` differs from `.git/`, this session is a background job that has already been moved into its own worktree — use the CURRENT worktree as the workspace and create the branch in place. Never create a worktree inside it.
+2. **Project provisioning next.** Else, if the repo ships `bin/create_worktree`, run `bin/create_worktree <branch>` and cd into the worktree it creates — it provisions env, database, credentials and agent memory fail-closed, which the generic skill cannot.
+3. **Fallback.** Only when neither applies, invoke superpowers:using-git-worktrees.
+
+Record the worktree path. Create `.e2e/` inside it and append `.e2e/` to the file at `git -C <worktree> rev-parse --git-path info/exclude` (in a worktree `.git` is a file, so the literal `.git/info/exclude` path does not exist; this resolves the real exclude file). This MUST happen before Stage 3 writes anything, else the no-diff check misreads `.e2e/` noise.
 
 ## Stage 3 — Implement each task (Sol)
 
