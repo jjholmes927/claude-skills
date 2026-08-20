@@ -1,53 +1,83 @@
 ---
 name: dev-workflow-iterate
-description: "Periodic review of the dev workflow itself — what's working, what's missing, what's rotting — via instruments-first evidence, an adversarial panel, and deletion-first output. Use when workflow friction accumulates, after a big process change beds in, or roughly quarterly. Two modes: light (~30 min, no fleet) and deep (multi-agent, expensive)."
+description: "Use when the user says /dev-workflow-iterate, asks for a workflow review, retro, or pulse ('what's working / missing / rotting', 'review my setup', 'is the tooling earning its keep'), when workflow friction has accumulated, or after a big process change beds in — monthly-ish for a light pulse, roughly quarterly for a deep review. Reviews the dev workflow itself with measured evidence and deletion-first output."
 ---
 
 # Dev workflow iterate
 
-Reviews the development workflow the way we review production: measured evidence, adversarial verification, and changes sequenced deletion-first. Born from the 2026-08-18/19 control-plane review (artifacts: The Missing Control Plane, The Operator's Day; memory: `workflow-control-plane-plan`).
+Reviews the development workflow the way production gets reviewed: measured evidence, adversarial verification, changes sequenced deletion-first. Prior iterations live in the `workflow-control-plane-plan` memory — it carries the artifact URLs (readable via WebFetch) and the standing verdicts. Start there.
 
-## Mode selection
+## When NOT to use
 
-Ask which mode unless the request states it:
+- A single tool question → answer it, with a live probe.
+- One broken helper → superpowers:systematic-debugging.
+- A one-off friction → a fix or a ticket, not a review.
+- "Should I adopt tool X?" → a live probe plus the standing build-vs-adopt verdicts.
 
-- **light** — ~30 minutes, no subagent fleet. Read the instruments, answer three questions, cut scope. Default for a monthly pulse or a single felt friction.
-- **deep** — multi-agent panel + blind cross-model opinion. Several million tokens and hours. Reserve for quarterly reviews, a pile of accumulated friction, or before/after a structural change (new tooling era, team change, new machine).
+## Mode
+
+**Default: light** (~30 minutes, no subagent fleet). Escalate to deep ONLY when the operator asks for it explicitly, or when ALL three hold: ≥ ~3 months since the last deep run, ≥ 3 distinct frictions queued, and a structural change in scope (new tooling era, team change, new machine). When in doubt, run light and say what a deep run would add. Deep costs several million tokens and hours.
 
 ## Iron laws (both modes)
 
-1. **Prior art before proposals.** Read `second-brain/01-decisions/` for standing decisions, the previous iteration's memory + artifact, and MEMORY.md's workflow rules — BEFORE drafting anything. A recommendation that contradicts a settled decision must name it and argue the reversal explicitly. (The first run nearly shipped a "stream registry" the 2026-07-19 work-OS record had already ruled out.)
-2. **Instruments before archaeology.** Start from what's already measured: `closure-sweep` output, `clone-status`, the workflow-ledger Honeycomb dataset (skill/verify usage), `gh pr list` stats (cadence, size, unreviewed rate), rate-limit history, MEMORY.md Active-work aging (entries violating the entry contract). Only excavate raw sources (shell history, transcripts) for questions the instruments can't answer.
-3. **Live-verify every tool claim before recommending it.** Docs and web sources are hypotheses; run the command on this machine and tag findings LIVE / DOCS / WEB. (Docs-optimism produced two near-misses in the first run: agent-view JSON's real schema, and `.worktreeinclude` vs `WORKTREE_OFFSET`.)
-4. **No new surfaces.** The fix is fewer places to look, not another dashboard. Any proposal adding a standing thing-to-check must displace something bigger.
-5. **Deletion-first output.** Phase 0 of any plan is pure scope cuts (rot, dead config, stale worktrees/stashes, leaked secrets) executed immediately; builds come after and must pass the fast-scope-cuts / slow-architecture-bets test.
+1. **Prior art before proposals.** Read `/Users/joelholmes/engineering/second-brain/01-decisions/`, the `workflow-control-plane-plan` memory, and MEMORY.md's workflow rules BEFORE drafting anything. A recommendation contradicting a settled decision must name it and argue the reversal explicitly. (A prior run nearly shipped a "stream registry" the 2026-07-19 work-OS record had already ruled out.)
+2. **Instruments before archaeology.** The helpers are dotfiles shell FUNCTIONS, not binaries — invoke via a login shell. The instrument set:
+   - `bash -lc 'CLOSURE_REPOS="wearebeam/magicnotes wearebeam/infrastructure jjholmes927/jjholmes927-claude-skills wearebeam/beam-claude-skills jjholmes927/dotfiles" closure-sweep'` — the default repo list excludes the workflow's own repos; widen it for this run.
+   - `bash -lc 'clone-status'` — note it fetches. It is the only lanes helper that is an instrument: `gmp-all` and `lane-sweep` MUTATE (stash, branch, checkout) and are never run as part of a review.
+   - `gh pr list` stats: cadence, size against the standing 400-line bar, and the **unreviewed rate** = share of the last 60 merged PRs whose reviews are empty or bot-only (exclude Bugbot, the CI AI reviewer, and other bots explicitly; never trust `reviewDecision` alone — CI auto-reviews every PR).
+   - Fleet snapshot: `claude agents --cwd ~/engineering --json` — read `state`/`waitingFor`, never `status`.
+   - MEMORY.md Active-work aging against the `active-work-entry-contract` memory — its 7-day residue rule is light mode's cheapest deletion generator.
+   - Current 5h/7d rate-limit headroom from the statusline payload — instantaneous only; no history exists anywhere.
+   - The workflow-ledger (Honeycomb) is **not agent-queryable on this machine**: the MCP is scoped to team `beam`, the local ingest key 401s on queries. Recipes and the board URL are in `/Users/joelholmes/engineering/dotfiles/docs/agent-telemetry.md` §4 — ask the operator for a board read. Interpretation caveats: it records ATTEMPTS not outcomes, sees nothing from prompt-expansion commands, and fails silently — absence of events is never evidence of absence of usage.
+   A broken or unreachable instrument is itself a top-priority **Rotting** finding — record it and continue.
+3. **Live-verify every tool claim before recommending it.** Docs and web sources are hypotheses; run the command on this machine and tag findings LIVE / DOCS / WEB. Probes run in a scratch repo under the session scratchpad — never in a lane, and never via `gmp-all`, `lane-sweep`, or `git stash` anywhere during a review. (Docs-optimism produced two near-misses in a prior run: agent-view's real JSON schema, and `.worktreeinclude` vs `WORKTREE_OFFSET`.)
+4. **No new surfaces.** The fix is fewer places to look, not another dashboard (01-decisions 2026-07-19: "a status dashboard — explicitly ruled out"). Any proposal adding a standing thing-to-check must displace something bigger.
+5. **Deletion-first, consent-gated.** Phase 0 of any plan is scope cuts — but every cut is LISTED first (what, why, recoverable or not) and executed on the operator's go-ahead. Refusals that never relax: never remove a worktree with uncommitted changes or an unpushed branch (`git -C <worktree> status --porcelain` first); never touch a lane root hosting a live session; prefer `claude rm` (refuses dirty worktrees) over agent-view delete (destroys them); park WIP via `lane-sweep` rather than dropping it; dropped stashes are unrecoverable after gc. Secrets: an agent can scrub history, only a human can rotate — a scrub without the rotation is an OPEN INCIDENT, not a completed cut.
 6. **Consent boundaries hold.** Team-facing changes (shared repos, review rotas, CI) are proposed, not shipped, unless explicitly asked. Never merge past a failing guard.
 
 ## Light mode
 
-1. Run the instruments (law 2) and skim the previous iteration's plan memory — mark each of its items done / rotted / abandoned.
-2. Answer three questions with evidence, one line each per item:
-   - **Working:** what earned its keep since last time (usage evidence, not fondness)?
-   - **Missing:** what friction did the operator actually feel (ask them for their list too)?
-   - **Rotting:** what shipped last iteration and is now unused, drifted, or bypassed? (Check: does the plugin cache match source? Do the helpers still run? Are memory delete-whens overdue?)
-3. Output: a short chat summary + up to five actions, at least one of which is a deletion. Execute the scope cuts now; anything bigger gets a memory entry per the active-work entry contract.
+1. Run the instruments (law 2) and mark each of the previous iteration's items done / rotted / abandoned.
+2. Answer three questions with evidence, one line per item:
+   - **Working:** what earned its keep (usage evidence, not fondness)?
+   - **Missing:** what friction did the operator feel — ask the operator for their own list; instruments miss feelings.
+   - **Rotting:** what is now unused, drifted, or bypassed? Check plugin cache vs source, helper health, and overdue delete-whens.
+3. Output: a short chat summary + up to five actions, at least one a deletion (consent-gated per law 5). Anything bigger becomes a memory entry satisfying the `active-work-entry-contract` (expected outcome, next action, delete-when).
 
 ## Deep mode
 
-1. **Evidence pack** (light mode steps first, then): fresh gh/Linear throughput stats, live tmux/fleet snapshot, any new-tool questions the operator raised. Write it to a scratchpad file — panel agents read the file, not the conversation.
-2. **Research only the open questions** — parallel agents per question (named tools, cloud state, practitioner patterns), each returning findings with source evidence. Don't re-survey settled ground; cite the previous run's verdicts and check only what could have changed.
-3. **Draft the recommendation, then attack it.** Adversarial panel, one agent per lens, each reading the evidence pack:
-   - build-steelman (argue for MORE custom investment),
-   - pragmatist (argue the boring existing thing already does it — hunt for wiring bugs before builds),
-   - attention-economics (argue for removal; every addition must fund itself in attention),
-   - claim-verifier (live-run the load-bearing tool claims; tag LIVE/DOCS/WEB; may probe in a scratch repo only, never the lanes),
-   - completeness critic (what's missing: prior art, team angle, cost, portability).
-4. **Blind cross-model opinion:** brief Sol via codex-collab with the evidence pack ONLY (not the draft), xhigh effort. Reconcile where Sol and the panel disagree; unresolved forks get a decision rule ("do X for four weeks; if Y still happens, build Z"), not a compromise.
-5. **Output:** artifact (visual, verdict-first, provenance-tagged) + 3-5 line chat summary + phased plan where Phase 0 scope cuts are executed immediately. Update `dotfiles/docs/operator-workflow.md` for anything that changes the operating model, and write the iteration memory with expected outcome, next action, and delete-when.
+Budget preflight first: read the current 5h/7d headroom, state a token estimate, cap the panel at five lenses, pass `--effort` explicitly on every spawn, and run lenses serially if the 5h window is already hot.
 
-## Red flags
+Checklist (copy into the response and check off):
 
-- Recommending a tool from docs or stars without a live probe → law 3.
-- A plan whose Phase 1 is a build → re-check laws 2 and 5; the first run's biggest find was a wiring bug (`/e2e` bypassing `bin/create_worktree`), not a missing system.
-- The review producing only additions → the attention lens failed; re-run it.
-- Skipping the operator's own "what felt bad" question → instruments miss feelings; both are evidence.
+```
+[ ] Evidence pack written to a scratchpad FILE (light-mode findings + fresh stats + the operator's open questions)
+[ ] Research agents on OPEN questions only — cite prior verdicts, re-check only what could have changed
+[ ] Draft recommendation written
+[ ] Panel dispatched in ONE message, in parallel, all reading the pack file:
+    build-steelman · pragmatist · attention-economics · claim-verifier (live probes, scratch repo only) · completeness critic
+[ ] Blind cross-model opinion: joel-workflow:codex-collab ask at xhigh, evidence pack ONLY — never the draft
+[ ] Reconcile panel vs Sol; unresolved forks get a decision rule ("do X for 4 weeks; if Y recurs, build Z"), never a compromise
+[ ] Output: plan artifact per the standing plan-review rule (visual overview + Raw plan tab), 3-5 line chat summary,
+    Phase 0 cuts consent-gated then executed, /Users/joelholmes/engineering/dotfiles/docs/operator-workflow.md updated,
+    iteration memory written per the entry contract
+```
+
+## Common rationalizations
+
+| Excuse | Reality |
+|--------|---------|
+| "I remember what we decided" | Read `01-decisions/`. A prior run nearly shipped a registry the 2026-07-19 record had ruled out. |
+| "The docs are recent enough" | Docs are hypotheses. Tag LIVE/DOCS/WEB — docs-optimism shipped two near-misses in a prior run. |
+| "This addition is small" | Law 4: it must displace something bigger. |
+| "Nothing obvious to delete" | The attention lens failed — re-run it. |
+| "The cut is obviously safe, just do it" | Law 5: list, confirm, then cut. Uncommitted worktrees are unrecoverable. |
+
+## Red Flags — STOP
+
+- Recommending a tool from docs or star counts without a live probe.
+- A plan whose Phase 1 is a build — a prior run's biggest find was a wiring bug (`/e2e` bypassing `bin/create_worktree`), not a missing system.
+- The review producing only additions.
+- Skipping the operator's own "what felt bad" list.
+
+All of these mean: stop drafting, return to the instruments, and re-derive the recommendation from evidence.
