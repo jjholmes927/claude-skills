@@ -40,6 +40,19 @@ new-agent <lane> [branch-name] --effort high|low --safe   # optional flags; defa
 4. On an idle notice, check whether the lane is actually complete — it goes idle at plan-approval gates too. Idle notices carry the session name; map name → id via `claude agents`, then `claude logs <id>`. Reassign the next queued ticket only on real completion: the lane reported `fleet-status complete` AND the ticket is Done in Linear (which the lane sets only after its /e2e verification passed and the change is in production). An approval gate goes to the user; leave the lane alone.
 5. Plan approvals belong to the user, in the lane's own session. The orchestrator never approves plans, edits lane worktrees, or duplicates lane work.
 
+## Completion Detection — idle notices are NOT enough
+
+Idle notices alone will silently drop completions:
+- They fire at approval gates and clarifying questions, not just completion.
+- They are **one-shot**, and re-subscribing to an already-idle session fires the notice again immediately (notice loop) — so the natural move is to stop watching, after which nothing signals completion.
+- A lane that finishes and **exits** may never notify at all.
+
+So run a **heartbeat sweep** as the authoritative check, with idle notices only as a hint to sweep early:
+1. Schedule a recurring check (ScheduleWakeup / `/loop`, ~15–20 min) for as long as any lane has an assigned ticket.
+2. Each sweep: `ListAgents` (or `claude agents --json` — the plain command needs a TTY) for lane liveness, plus the Linear state of each assigned ticket.
+3. **Refill trigger:** ticket Done in Linear AND lane session gone or idle-with-`fleet-status complete`. Lane session missing but ticket not Done = investigate (crashed or parked), don't refill.
+4. On refill: launch `new-agent` fresh (it fetches origin/main itself), announce the new assignment to the user, and note follow-up tickets lanes filed — they join the queue at their priority.
+
 ## Quick Reference
 
 | Task | Command |
