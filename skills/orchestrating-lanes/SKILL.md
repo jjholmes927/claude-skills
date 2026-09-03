@@ -53,6 +53,14 @@ So run a **heartbeat sweep** as the authoritative check, with idle notices only 
 3. **Refill trigger:** ticket Done in Linear AND lane session gone or idle-with-`fleet-status complete`. Lane session missing but ticket not Done = investigate (crashed or parked), don't refill.
 4. On refill: launch `new-agent` fresh (it fetches origin/main itself), announce the new assignment to the user, and note follow-up tickets lanes filed — they join the queue at their priority.
 
+## Status Table Format
+
+When reporting lane status to the user, always include the ticket title (short form) next to the ID:
+
+| Lane | Ticket | Stage |
+|---|---|---|
+| GigMe | NEV-118 Resend quoted-printable mangling | 🟢 writing plan |
+
 ## Quick Reference
 
 | Task | Command |
