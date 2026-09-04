@@ -101,3 +101,13 @@ Contributions welcome! To add a new skill:
 ## License
 
 MIT - See LICENSE file for details
+
+## Contributing
+
+Every change under `skills/` or `commands/` needs a version bump in `plugin.json` and both version fields in `.claude-plugin/marketplace.json`, otherwise installed copies never pick it up. CI enforces this on `master` and a local pre-push hook catches it earlier:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+`master` only accepts pull requests with the version check green.

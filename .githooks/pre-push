@@ -1,0 +1,38 @@
+#!/bin/bash
+set -uo pipefail
+
+remote="$1"
+zero=0000000000000000000000000000000000000000
+content_paths=(skills commands install.sh plugin.json .claude-plugin/marketplace.json)
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue
+
+  if [ "$remote_sha" = "$zero" ]; then
+    base=$(git merge-base "$local_sha" "$remote/master" 2>/dev/null || git merge-base "$local_sha" origin/master 2>/dev/null) || continue
+  else
+    base="$remote_sha"
+  fi
+
+  changed=$(git diff --name-only "$base" "$local_sha" -- "${content_paths[@]}")
+  [ -z "$changed" ] && continue
+
+  old=$(git show "$base:plugin.json" | jq -r '.version')
+  new=$(git show "$local_sha:plugin.json" | jq -r '.version')
+  top=$(git show "$local_sha:.claude-plugin/marketplace.json" | jq -r '.version')
+  entry=$(git show "$local_sha:.claude-plugin/marketplace.json" | jq -r '.plugins[] | select(.name == "joel-workflow") | .version')
+
+  if [ "$old" = "$new" ]; then
+    echo "pre-push: plugin content changed but plugin.json version is still $new." >&2
+    echo "pre-push: bump plugin.json .version and both marketplace.json version fields, then push again." >&2
+    echo "$changed" | sed 's/^/  /' >&2
+    exit 1
+  fi
+
+  if [ "$new" != "$top" ] || [ "$new" != "$entry" ]; then
+    echo "pre-push: version mismatch — plugin.json=$new marketplace.json=$top plugin entry=$entry" >&2
+    exit 1
+  fi
+done
+
+exit 0
