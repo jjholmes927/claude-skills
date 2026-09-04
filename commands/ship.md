@@ -150,6 +150,24 @@ If `/simplify` changed any files, re-run Step 4's verification for the paths it 
 
 ## Step 6: Push + Create PR
 
+**Fingerprint gate (runs immediately before the push, after every commit is made).** /verify Step 6 recorded its verdict against a fingerprint of the exact working tree. The gate assumes everything verified is committed: run `git status --porcelain` first and, if it is non-empty, commit the remainder (or remove stray files) and re-run /verify — a dirty tree makes the record describe code the push does not carry. Then recompute the fingerprint and require a matching record:
+
+```bash
+TOP=$(git rev-parse --show-toplevel)
+EXCL=$(git rev-parse --git-path info/exclude); mkdir -p "$(dirname "$EXCL")"
+grep -qx '.verify/' "$EXCL" 2>/dev/null || printf '\n.verify/\n' >> "$EXCL"
+IDX=$(mktemp); cp "$(git rev-parse --git-path index)" "$IDX" 2>/dev/null || rm -f "$IDX"
+GIT_INDEX_FILE="$IDX" git -C "$TOP" add -A . >/dev/null 2>&1
+TREE=$(GIT_INDEX_FILE="$IDX" git -C "$TOP" write-tree); rm -f "$IDX"
+[ -f "$TOP/.verify/$TREE.json" ] && echo "verify record found for $TREE" || echo "NO VERIFY RECORD for $TREE"
+```
+
+- No record and no verify verdict block in this session → /verify never ran. Back to Step 4. Absence of a record is never evidence of "not verifiable".
+- Record found → push.
+- No record and the Step 4 verdict was ✅/🟡 → something changed after verification (a simplify edit, a formatter, a late fix). **Do not push.** Re-run /verify on the current tree, then re-check.
+- No record because Step 4 ended in a declared 🔴 not-verifiable → the existing 🔴 SHOUT path applies; push is allowed only with the `🔴 NOT VERIFIED LOCALLY` lead line.
+- A `.verify/` directory is local evidence (git-excluded). Never commit it, never delete or hand-write a record to get past the gate — that is forging evidence.
+
 ```bash
 git push -u origin <branch-name>
 ```
@@ -230,6 +248,8 @@ Code review now runs automatically in CI: the `AI code review` workflow posts a 
 ## Red Flags — STOP
 
 - About to push without a /verify verdict for this diff → back to Step 4; "tests pass" is not a verdict
+- Fingerprint gate finds no record for the current tree, and Step 4 did not end in a declared 🔴 not-verifiable → the code changed after verification (or was never verified); re-verify, do not push
+- "The only change since verify was a formatter / a comment" → re-verify anyway; the gate is content-based, not judgement-based
 - Verification quietly skipped (missing tool, down server) → install the tool / start the server, or declare 🔴 loudly — silence is prohibited
 - About to push to `main` directly → create a branch first
 - About to force-push → ask user for confirmation
