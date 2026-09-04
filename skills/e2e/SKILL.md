@@ -32,6 +32,7 @@ Violating the letter of a law is violating the law — there is no spirit-of-the
 | Sol failed twice, I'll finish it | Two failures = hard-stop and report, not takeover |
 | I'll just add one more check-in with the user | The plan gate is the ONLY gate |
 | Findings are minor, ship clean | Every unresolved finding becomes a PR comment |
+| I'll ask Joel whether to move the ticket / mark the stream | Stage 7 step 4 decides that from CI state; asking is an interruption without a judgement call |
 
 ## When NOT to use
 
@@ -70,11 +71,11 @@ codex CLI (authenticated), gh CLI, superpowers plugin, this plugin's ship + pick
 
 Branch: `jjholmes927-<slug>[-TICKET]`. Resolve the workspace in this order:
 
-1. **Already isolated?** If `[ -n "$CLAUDE_JOB_DIR" ]` AND `git rev-parse --git-common-dir` differs from `.git/`, this session is a background job that has already been moved into its own worktree — use the CURRENT worktree as the workspace and create the branch in place. Never create a worktree inside it.
+1. **Already isolated?** If `[ -f "$(git rev-parse --git-dir)/gitdir" ]` (a linked worktree's git dir carries a `gitdir` file; a main checkout's does not — this holds from any subdirectory, unlike comparing `--git-dir` with `--git-common-dir`, which mixes absolute and relative paths), the current directory is a linked worktree — whoever launched this session (new-agent, Claude's background isolation, Kandev, or you by hand) already gave it its own workspace. Use the CURRENT worktree and create the branch in place. Never create a worktree inside it, and never key this decision on a runtime-specific variable such as `CLAUDE_JOB_DIR`: the same skill must behave identically under any launcher.
 2. **Project provisioning next.** Else, if the repo ships `bin/create_worktree`, run `bin/create_worktree <branch>` and cd into the worktree it creates — it provisions env, database, credentials and agent memory fail-closed, which the generic skill cannot.
 3. **Fallback.** Only when neither applies, invoke superpowers:using-git-worktrees.
 
-Record the worktree path. Create `.e2e/` inside it and append `.e2e/` to the file at `git -C <worktree> rev-parse --git-path info/exclude` (in a worktree `.git` is a file, so the literal `.git/info/exclude` path does not exist; this resolves the real exclude file). This MUST happen before Stage 3 writes anything, else the no-diff check misreads `.e2e/` noise.
+Record the worktree path. Create `.e2e/` inside it and add `.e2e/` to the exclude file once: `EXCL=$(git -C <worktree> rev-parse --git-path info/exclude); mkdir -p "$(dirname "$EXCL")"; grep -qx '.e2e/' "$EXCL" 2>/dev/null || printf '\n.e2e/\n' >> "$EXCL"` (in a worktree `.git` is a file, so the literal `.git/info/exclude` path does not exist; `--git-path` resolves the real one, and the guard stops the line piling up on re-runs). This MUST happen before Stage 3 writes anything, else the no-diff check misreads `.e2e/` noise.
 
 ## Stage 3 — Implement each task (Sol)
 
@@ -111,4 +112,7 @@ Whole-branch check against the approved plan: every task present, no plan drift,
    **Red flag — hand-rolling Stage 7 is a violation.** Running `git push` / `gh pr create` / a CI watch directly instead of invoking ship skips ship's verify gate, and transcript audits show this is the main path by which unverified changes reach PRs. Stacked PRs, multi-repo pushes, and "it's just a small branch" are not exemptions: invoke ship per branch. If ship genuinely cannot run (e.g. its skill is unavailable in this session), say so in the Stage 7 report and run /verify manually before any push.
 2. Post each carried-forward finding as a PR comment: `gh pr comment <num> --body "..."` prefixed with `[e2e unresolved]`.
 3. CI failures (**CI fix: 2 max**): hand the failure log to `e2e-codex.sh resume` (effort `high`, most relevant task session), push, re-watch. Record each round in `.e2e/sessions.tsv` and count from the file, never from memory. After 2 rounds, hard-stop and report.
-4. Report: PR URL, tasks completed, fix-loop counts, unresolved findings, total codex sessions.
+4. Ticket and stream state — do this yourself, never ask the human whether to:
+   - Only after the PR is up AND CI is green (or the only red checks are the non-blocking ones noted in the report): Linear ticket runs move the ticket to **In Review**: load the tool first (`ToolSearch(query="select:mcp__linear-server__save_issue")`), then `mcp__linear-server__save_issue(id: "<TICKET>", state: "In Review")`. Never move it to Done — Done follows the merge, not the PR. If the state name is rejected, report the error and leave the ticket where it is.
+   - Then record the stream outcome: `fleet-status complete "<TICKET>: PR #<num> <url>"` (ad-hoc runs: describe the PR instead of a ticket). On any hard-stop — including the CI cap in step 3 — leave the ticket In Progress and record `fleet-status awaiting "<what is blocked and why>"` instead. Run it in your own shell, never via a subagent; if `fleet-status` is not on PATH, skip it and say so in the report.
+5. Report: PR URL, tasks completed, fix-loop counts, unresolved findings, total codex sessions, ticket state.

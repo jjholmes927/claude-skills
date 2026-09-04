@@ -62,6 +62,29 @@ Exactly three statuses. Every promise from Step 1 gets one.
 
 A verification that was skipped without being declared is a failure of this command — silence is the one prohibited outcome.
 
+## Step 6: Bind the verdict to the exact code that was verified
+
+A verdict is only true for the tree it was run against. Record it against a fingerprint of the working tree (tracked + uncommitted + untracked, ignored files excluded) so ship can refuse to push anything that changed afterwards. Committing the verified content does not change the fingerprint; editing a line does.
+
+```bash
+TOP=$(git rev-parse --show-toplevel)
+EXCL=$(git rev-parse --git-path info/exclude); mkdir -p "$(dirname "$EXCL")"
+grep -qx '.verify/' "$EXCL" 2>/dev/null || printf '\n.verify/\n' >> "$EXCL"
+IDX=$(mktemp); cp "$(git rev-parse --git-path index)" "$IDX" 2>/dev/null || rm -f "$IDX"
+GIT_INDEX_FILE="$IDX" git -C "$TOP" add -A . >/dev/null 2>&1
+TREE=$(GIT_INDEX_FILE="$IDX" git -C "$TOP" write-tree); rm -f "$IDX"
+mkdir -p "$TOP/.verify"
+```
+
+Write `$TOP/.verify/$TREE.json` when the overall verdict is ✅ or 🟡:
+
+```json
+{"tree": "<TREE>", "head": "<output of git rev-parse HEAD, informational only — ship matches on tree>", "at": "<ISO-8601 UTC>", "verdict": "verified|partial",
+ "arms": ["unit", "ui", "read-back"], "promises": [{"promise": "...", "status": "verified", "evidence": "<command → observed output, one line>"}]}
+```
+
+Rules: a 🔴 verdict writes nothing (ship's loud 🔴 path stays the only way past). The `.verify/` exclude must be in place before the fingerprint is computed, or the record perturbs its own hash. The record is evidence, not the verdict — the pasted ✅/🟡/🔴 block in chat is still required.
+
 ## Anti-patterns
 
 - "Tests pass, therefore it works"
@@ -83,3 +106,4 @@ $ARGUMENTS — Optional: a hint of what changed (ticket, PR ref, or free text). 
 - [ ] Real trigger exercised at least once — no hand-called handlers standing in for wiring
 - [ ] Environment repaired (tools installed/updated, server started) rather than verification downgraded
 - [ ] Report shows evidence per promise, or declares 🟡/🔴 with reason and follow-up plan — never silence
+- [ ] ✅/🟡 verdict recorded in `.verify/<tree>.json` against the working-tree fingerprint (Step 6)

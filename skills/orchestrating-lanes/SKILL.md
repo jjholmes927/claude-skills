@@ -23,8 +23,8 @@ Before assigning anything:
 ## Launch Recipe
 
 ```bash
-new-agent <lane> "/e2e TICKET-ID"
-new-agent <lane> [branch-name] --effort high|low --safe   # optional flags; default effort high, bypassPermissions
+new-agent <lane> --effort high "/e2e TICKET-ID"
+new-agent <lane> [branch-name] --effort high|low --safe   # optional flags; default effort low, bypassPermissions — pass --effort high for /e2e tickets
 ```
 
 - Lanes are directories under `$ENG_ROOT`. Enumerate candidates with `ls "$ENG_ROOT"`; a lane is free when no session from `claude agents` is working in it. The user names which dirs are lanes — don't assume every dir is one.
@@ -37,7 +37,7 @@ new-agent <lane> [branch-name] --effort high|low --safe   # optional flags; defa
 1. Build the prioritized queue (scoped per above).
 2. Launch one lane per free lane dir, top of queue first.
 3. Subscribe to each lane: `SendMessage {to: "<session-name>", notify_when_idle: true}` with no message. Never poll `ListAgents` or send "are you done?".
-4. On an idle notice, check whether the lane is actually complete — it goes idle at plan-approval gates too. Idle notices carry the session name; map name → id via `claude agents`, then `claude logs <id>`. Reassign the next queued ticket only on real completion: the lane reported `fleet-status complete` AND the ticket is Done in Linear (which the lane sets only after its /e2e verification passed and the change is in production). An approval gate goes to the user; leave the lane alone.
+4. On an idle notice, check whether the lane is actually complete — it goes idle at plan-approval gates too. Idle notices carry the session name; map name → id via `claude agents`, then `claude logs <id>`. Reassign the next queued ticket only on real completion: the lane reported `fleet-status complete` AND the ticket is **In Review** (or Done) in Linear — /e2e Stage 7 moves it to In Review when the PR is up; Done follows the merge and is not the lane's job. An approval gate goes to the user; leave the lane alone.
 5. Plan approvals belong to the user, in the lane's own session. The orchestrator never approves plans, edits lane worktrees, or duplicates lane work.
 
 ## Completion Detection — idle notices are NOT enough
@@ -50,7 +50,7 @@ Idle notices alone will silently drop completions:
 So run a **heartbeat sweep** as the authoritative check, with idle notices only as a hint to sweep early:
 1. Schedule a recurring check (ScheduleWakeup / `/loop`, ~15–20 min) for as long as any lane has an assigned ticket.
 2. Each sweep: `ListAgents` (or `claude agents --json` — the plain command needs a TTY) for lane liveness, plus the Linear state of each assigned ticket.
-3. **Refill trigger:** ticket Done in Linear AND lane session gone or idle-with-`fleet-status complete`. Lane session missing but ticket not Done = investigate (crashed or parked), don't refill.
+3. **Refill trigger:** ticket In Review or Done in Linear AND lane session gone or idle-with-`fleet-status complete`. Lane session missing but ticket not yet In Review = investigate (crashed or parked), don't refill.
 4. On refill: launch `new-agent` fresh (it fetches origin/main itself), announce the new assignment to the user, and note follow-up tickets lanes filed — they join the queue at their priority.
 
 ## Status Table Format
@@ -65,8 +65,8 @@ When reporting lane status to the user, always include the ticket title (short f
 
 | Task | Command |
 |---|---|
-| Launch lane | `new-agent <lane> "/e2e ABC-123"` |
-| Nested repo lane | `ENG_ROOT=$ENG_ROOT/<lane> new-agent <repo-dir> "/e2e ABC-123"` |
+| Launch lane | `new-agent <lane> --effort high "/e2e ABC-123"` |
+| Nested repo lane | `ENG_ROOT=$ENG_ROOT/<lane> new-agent <repo-dir> --effort high "/e2e ABC-123"` |
 | List sessions | `claude agents` |
 | Lane output | `claude logs <id>` |
 | Stop lane | `claude stop <id>` |
