@@ -40,6 +40,10 @@ Auto-refresh coding guidelines based on codebase patterns, PR reviews, and appro
 
 Full delivery pipeline: Claude/Fable plans with one approval gate, codex/Sol implements each task headlessly with graded reasoning effort, dual review with fix loops, then ship to PR with CI watch.
 
+### 🔍 [Investigate](skills/investigate/)
+
+Findings, not code: claims the Linear ticket, ranks hypotheses before hunting evidence, posts a ≤300-word comment where every claim carries a link or record id and every unreachable source is flagged up top, then hands the ticket to In Review. The `agent:investigate` fleet watch runs it as `/investigate <ticket>`.
+
 ### 👀 [Codex Collab](skills/codex-collab/)
 
 Pulls codex/Sol in as a read-only second pair of eyes on whatever workflow is running: cross-model review, corroboration of a conclusion, or a blind second opinion on a design — with graded reasoning effort and honest disagreement reporting.
