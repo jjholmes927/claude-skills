@@ -168,6 +168,17 @@ TREE=$(GIT_INDEX_FILE="$IDX" git -C "$TOP" write-tree); rm -f "$IDX"
 - No record because Step 4 ended in a declared 🔴 not-verifiable → the existing 🔴 SHOUT path applies; push is allowed only with the `🔴 NOT VERIFIED LOCALLY` lead line.
 - A `.verify/` directory is local evidence (git-excluded). Never commit it, never delete or hand-write a record to get past the gate — that is forging evidence.
 
+**Size gate (runs before the push, on the exact diff the PR will show).** Every PR is capped at **500 lines of total diff — app code, specs and docs all count**; aim for ~400. Measure against the PR's base (the stack parent for a stacked PR, otherwise `origin/main`):
+
+```bash
+BASE=${PR_BASE:-origin/main}   # the branch the PR targets
+git diff --numstat "$BASE"...HEAD | awk '{ if ($3 ~ /^spec\//) s+=$1+$2; else if ($3 ~ /^docs\//) d+=$1+$2; else a+=$1+$2 } END { printf "app=%d spec=%d docs=%d total=%d\n", a, s, d, a+s+d }'
+```
+
+- total ≤ 500 → continue; paste the line in the ship summary.
+- total > 500 → **do not create the PR.** Split at commit boundaries into a stack (foundational / inert slices first, each measured the same way), then ship each slice with its own /verify run. Say what the slices are before doing it. The only exemption is a generated or vendored file the author cannot reduce (lockfiles, schema dumps, fixtures) — name it in the summary and measure the rest.
+- Counting only app lines is the classic miss: reactor/hub code carries 3–4× its size in interleaving specs (INT-856 shipped +1062 and +1171 that way). If the split is known in advance, budget the slices at plan time rather than discovering the overflow here.
+
 ```bash
 git push -u origin <branch-name>
 ```
@@ -251,6 +262,8 @@ Code review now runs automatically in CI: the `AI code review` workflow posts a 
 - Fingerprint gate finds no record for the current tree, and Step 4 did not end in a declared 🔴 not-verifiable → the code changed after verification (or was never verified); re-verify, do not push
 - "The only change since verify was a formatter / a comment" → re-verify anyway; the gate is content-based, not judgement-based
 - Verification quietly skipped (missing tool, down server) → install the tool / start the server, or declare 🔴 loudly — silence is prohibited
+- Size gate shows total > 500 (specs and docs included) → do not open the PR; split into a stack first
+- "It's mostly tests" / "the app code is only 200 lines" → tests count; the reviewer reads the whole diff
 - About to push to `main` directly → create a branch first
 - About to force-push → ask user for confirmation
 - No changes detected → do not create empty commits
